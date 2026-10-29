@@ -1,0 +1,7 @@
+node_modules/
+dist/
+www/
+android/
+out/
+cap-assets/
+capacitor.config.json
