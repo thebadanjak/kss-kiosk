@@ -1,0 +1,25 @@
+{
+  "name": "kss-kiosk",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "KSS Street Food samouslužni kiosk i blagajna (Supabase + Capacitor)",
+  "scripts": {
+    "build": "node scripts/build-web.mjs all",
+    "build:kiosk": "node scripts/build-web.mjs kiosk",
+    "build:blagajna": "node scripts/build-web.mjs blagajna",
+    "build:admin": "node scripts/build-web.mjs admin",
+    "android:kiosk": "bash scripts/build-android.sh kiosk",
+    "android:blagajna": "bash scripts/build-android.sh blagajna"
+  },
+  "dependencies": {
+    "@capacitor/android": "~6.2.0",
+    "@capacitor/core": "~6.2.0",
+    "@fontsource/anton": "^5.0.0",
+    "@fontsource/archivo": "^5.0.0",
+    "@supabase/supabase-js": "^2.45.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "~6.2.0"
+  }
+}

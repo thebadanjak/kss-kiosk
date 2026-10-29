@@ -1,0 +1,73 @@
+name: Izgradi aplikacije
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  android:
+    name: APK · ${{ matrix.flavor }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor: [kiosk, blagajna]
+    env:
+      KSS_SUPABASE_URL: ${{ secrets.KSS_SUPABASE_URL }}
+      KSS_SUPABASE_ANON_KEY: ${{ secrets.KSS_SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - run: npm install --no-audit --no-fund
+      - run: bash scripts/build-android.sh ${{ matrix.flavor }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KSS-${{ matrix.flavor }}-apk
+          path: out/KSS-${{ matrix.flavor }}.apk
+          retention-days: 30
+
+  admin-web:
+    name: Web administracija
+    runs-on: ubuntu-latest
+    env:
+      KSS_SUPABASE_URL: ${{ secrets.KSS_SUPABASE_URL }}
+      KSS_SUPABASE_ANON_KEY: ${{ secrets.KSS_SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - run: node scripts/build-web.mjs admin
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KSS-admin-web
+          path: dist/admin
+          retention-days: 30
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/admin
+
+  pages:
+    name: Objavi administraciju (GitHub Pages)
+    needs: admin-web
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

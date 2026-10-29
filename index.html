@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#17151a">
+<title>KSS Street Food</title>
+<link rel="stylesheet" href="vendor/fonts.css" onerror="this.remove()">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app" id="app">
+
+  <section class="screen center" id="boot">
+    <div class="spinner" aria-label="Učitavanje"></div>
+  </section>
+
+  <section class="screen center" id="login" hidden>
+    <div class="logo-sm" style="font-size:56px">KSS<i>STREET FOOD</i></div>
+    <form class="login" id="loginForm" novalidate>
+      <div class="q" style="font-size:36px" id="loginTitle">Prijava uređaja</div>
+      <label class="f"><span>E-mail lokala</span><input class="inp" id="lgEmail" type="email" autocomplete="username" required></label>
+      <label class="f"><span>Lozinka</span><input class="inp" id="lgPass" type="password" autocomplete="current-password" required></label>
+      <div class="err" id="lgErr" role="alert"></div>
+      <button class="btn y" id="lgBtn" type="submit">Prijavi uređaj</button>
+      <p class="adm-note">Upišite račun lokala iz Supabasea. Prijava ostaje zapamćena na ovom uređaju.</p>
+    </form>
+  </section>
+
+  <section class="screen" id="attract" hidden>
+    <div class="logo-big"><b id="brandBig" style="font-weight:400">KSS</b><span id="tagBig">STREET FOOD</span></div>
+    <div class="attract-hero" aria-hidden="true">🍔</div>
+    <button class="tap" id="startBtn">DODIRNI ZA NARUDŽBU</button>
+    <div class="attract-sub">Naruči ovdje · Plati na blagajni</div>
+  </section>
+
+  <section class="screen" id="dine" hidden>
+    <div class="q">Gdje ćete jesti danas?</div>
+    <div class="dine-row">
+      <button class="dine-card" data-dine="Jedem ovdje"><span class="ico">🍽️</span><b>JEDEM OVDJE</b><small>Poslužujemo na pultu</small></button>
+      <button class="dine-card" data-dine="Za van"><span class="ico">🛍️</span><b>ZA VAN</b><small>Pakiramo u vrećicu</small></button>
+    </div>
+    <button class="back-link" data-go="attract">← Natrag</button>
+  </section>
+
+  <section class="screen" id="menu" hidden>
+    <header class="topbar">
+      <button class="logo-sm brand-sm" id="logoTap" aria-label="Logo"></button>
+      <div class="top-actions">
+        <button class="pill alt" id="dineChip"></button>
+        <button class="pill" id="cancelBtn">✕ Odustani</button>
+      </div>
+    </header>
+    <div class="menu-body">
+      <nav class="rail" id="rail"></nav>
+      <main class="content" id="content"></main>
+    </div>
+    <div class="orderbar">
+      <div class="ob-info"><small id="obCount">Košarica je prazna</small><b class="money" id="obTotal">0,00 €</b></div>
+      <button class="btn y" id="toReview" disabled>Pregled narudžbe →</button>
+    </div>
+  </section>
+
+  <section class="screen" id="review" hidden>
+    <header class="topbar">
+      <span class="logo-sm brand-sm"></span>
+      <button class="pill" data-go="menu">← Dodaj još</button>
+    </header>
+    <div class="rev"><div class="rev-wrap" id="revList"></div><div class="totals" id="totals"></div></div>
+    <div class="orderbar" style="position:static">
+      <button class="btn ghost" data-go="menu">← Natrag na meni</button>
+      <button class="btn" id="toPay">Pošalji narudžbu →</button>
+    </div>
+  </section>
+
+  <section class="screen center" id="done" hidden>
+    <div class="ticket"><small>Broj narudžbe</small><div class="num money" id="orderNum">…</div><p id="doneDine"></p></div>
+    <div class="q" id="doneTitle">Narudžba je zaprimljena.</div>
+    <div class="done-note" id="doneNote"></div>
+    <button class="btn y" id="newOrder">Nova narudžba</button>
+  </section>
+
+  <section class="screen center" id="lock" hidden>
+    <div class="q">Blagajna · narudžbe s kioska</div>
+    <div class="done-note">Otključajte PIN-om osoblja da vidite narudžbe za prekucavanje u Pelion.</div>
+    <button class="btn y" id="unlockBtn">Otključaj</button>
+  </section>
+
+  <section class="screen" id="admin" hidden>
+    <header class="topbar">
+      <span class="logo-sm"><span class="brand-txt">KSS</span><i id="admTitle">UREĐIVANJE</i></span>
+      <div class="top-actions">
+        <span class="pill alt" id="syncPill">…</span>
+        <button class="pill" id="admExit">Gotovo · natrag na kiosk</button>
+      </div>
+    </header>
+    <nav class="tabs" id="tabs">
+      <button class="tab on" data-tab="orders">Narudžbe</button>
+      <button class="tab" data-tab="items">Artikli</button>
+      <button class="tab" data-tab="cats">Kategorije</button>
+      <button class="tab" data-tab="groups">Opcije i dodaci</button>
+      <button class="tab" data-tab="settings">Postavke</button>
+    </nav>
+    <div class="adm-body" id="admBody"><div class="adm-wrap" id="admWrap"></div></div>
+  </section>
+</div>
+<script src="config.js"></script>
+<script src="vendor/supabase.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
