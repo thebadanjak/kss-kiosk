@@ -57,14 +57,17 @@ jobs:
           path: dist/admin
           retention-days: 30
       - uses: actions/upload-pages-artifact@v3
+        if: vars.KSS_PAGES == 'true'
         with:
           path: dist/admin
 
+  # Uključuje se samo ako u Settings -> Secrets and variables -> Actions -> Variables
+  # postoji varijabla KSS_PAGES = true (i GitHub Pages je uključen: Settings -> Pages -> Source: GitHub Actions).
   pages:
     name: Objavi administraciju (GitHub Pages)
     needs: admin-web
+    if: vars.KSS_PAGES == 'true'
     runs-on: ubuntu-latest
-    continue-on-error: true
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
