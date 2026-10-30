@@ -30,20 +30,14 @@ npx cap add android
 MA_DIR="android/app/src/main/java/$(echo "$APP_ID" | tr . /)"
 sed "s/__PKG__/$APP_ID/" android-template/MainActivity.java > "$MA_DIR/MainActivity.java"
 
-# ikona aplikacije (ako ne uspije, ostaje zadana ikona)
-if [ -f "assets/icon-$FLAVOR.png" ]; then
-  rm -rf cap-assets && mkdir -p cap-assets
-  cp "assets/icon-$FLAVOR.png" cap-assets/icon-only.png
-  cp "assets/icon-$FLAVOR.png" cap-assets/icon-foreground.png
-  npx --yes @capacitor/assets@3.0.5 generate --android --assetPath cap-assets \
-    --iconBackgroundColor "$BG" --iconBackgroundColorDark "$BG" || echo "! Ikona nije generirana, koristi se zadana"
-fi
+# ikona aplikacije: gotove slike iz android-template/res-<način>
+cp -r "android-template/res-$FLAVOR/." android/app/src/main/res/
 
 npx cap sync android
 
 # isti potpisni ključ za svaku gradnju na GitHubu, da se nova verzija instalira preko stare
 if [ "${CI:-}" = "true" ]; then mkdir -p ~/.android && cp android-template/debug.keystore ~/.android/debug.keystore; fi
-(cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon)
+(cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon --console=plain)
 
 mkdir -p out
 cp android/app/build/outputs/apk/debug/app-debug.apk "out/KSS-$FLAVOR.apk"
