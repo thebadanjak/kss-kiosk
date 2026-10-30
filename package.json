@@ -15,8 +15,8 @@
   "dependencies": {
     "@capacitor/android": "~6.2.0",
     "@capacitor/core": "~6.2.0",
-    "@fontsource/anton": "^5.0.0",
-    "@fontsource/archivo": "^5.0.0",
+    "@fontsource/saira": "^5.0.0",
+    "@fontsource/saira-condensed": "^5.0.0",
     "@supabase/supabase-js": "^2.45.4"
   },
   "devDependencies": {

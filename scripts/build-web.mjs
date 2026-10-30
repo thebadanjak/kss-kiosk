@@ -18,8 +18,8 @@ const supabaseAnonKey = (process.env.KSS_SUPABASE_ANON_KEY || cfg.supabaseAnonKe
 function copyFonts(outVendor) {
   const fontsOut = path.join(outVendor, 'fonts');
   const sheets = [
-    ['@fontsource/anton', ['400']],
-    ['@fontsource/archivo', ['400', '500', '600', '700', '800']],
+    ['@fontsource/saira', ['400', '500', '600', '700']],
+    ['@fontsource/saira-condensed', ['800']],
   ];
   const imports = [];
   for (const [pkg, weights] of sheets) {
@@ -47,6 +47,7 @@ for (const mode of modes) {
   fs.rmSync(out, { recursive: true, force: true });
   fs.mkdirSync(path.join(out, 'vendor'), { recursive: true });
   for (const f of ['index.html', 'app.js', 'style.css']) fs.copyFileSync(path.join(root, 'app', f), path.join(out, f));
+  fs.cpSync(path.join(root, 'app', 'img'), path.join(out, 'img'), { recursive: true });
 
   const sbUmd = path.join(root, 'node_modules', '@supabase', 'supabase-js', 'dist', 'umd', 'supabase.js');
   if (fs.existsSync(sbUmd)) fs.copyFileSync(sbUmd, path.join(out, 'vendor', 'supabase.js'));

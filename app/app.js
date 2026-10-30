@@ -20,7 +20,7 @@ const DEVICE=(()=>{let d=lsGet('kss-device-id',null);if(!d){d=MODE+'-'+Math.rand
 
 /* ---------- default menu ---------- */
 const DEF={
-  settings:{brand:'KSS',tagline:'STREET FOOD',pin:'1234',vat:13,idle:60},
+  settings:{brand:'KSS',tagline:'STREET FOOD',pin:'1234',vat:13,idle:60,promo:''},
   groups:[
     {id:'meal',name:'Napravi meni',hint:'pomfrit + piće',type:'single',req:true,opts:[{n:'Samo burger',p:0},{n:'Meni (pomfrit + 0,33 l)',p:3.5},{n:'Veliki meni (veliki pomfrit + 0,5 l)',p:4.7}]},
     {id:'extra',name:'Dodaci',hint:'odaberite više',type:'multi',req:false,opts:[{n:'Dodatni cheddar',p:0.8},{n:'Hrskava slanina',p:1.2},{n:'Jalapeño',p:0.5},{n:'Karamelizirani luk',p:0.6},{n:'Pečeno jaje',p:0.9}]},
@@ -73,7 +73,7 @@ const $=s=>document.querySelector(s);
 const eur=n=>(+n).toFixed(2).replace('.',',')+' €';
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const uid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
-const TINTS=['#ffe1d6','#ffeeb8','#ddeed5','#e6dcf5','#d6e9f4','#f7dcdc'];
+const TINTS=['#2C1D20','#2A2620','#1E2A24','#25202D','#1E252C','#2D2121'];
 const tint=id=>TINTS[[...String(id)].reduce((a,c)=>a+c.charCodeAt(0),0)%TINTS.length];
 const cat=id=>C.cats.find(c=>c.id===id);
 const grp=id=>C.groups.find(g=>g.id===id);
@@ -122,7 +122,7 @@ const Cloud={
   async uploadPhoto(dataUrl,itemId){
     const blob=await (await fetch(dataUrl)).blob();
     const path=`${RID}/${itemId}-${Date.now().toString(36)}.jpg`;
-    const {error}=await sb.storage.from('menu-photos').upload(path,blob,{contentType:'image/jpeg',upsert:true,cacheControl:'31536000'});
+    const {error}=await sb.storage.from('menu-photos').upload(path,blob,{contentType:'image/jpeg',upsert:false,cacheControl:'31536000'});
     if(error)throw error;
     return sb.storage.from('menu-photos').getPublicUrl(path).data.publicUrl;
   },
@@ -238,9 +238,9 @@ let S={dine:'',cat:'',cart:[]};
 let idleT=null,idleIv=null,doneT=null;
 
 function brand(){
-  $('#brandBig').textContent=C.settings.brand; $('#tagBig').textContent=C.settings.tagline;
-  document.querySelectorAll('.brand-sm').forEach(el=>el.innerHTML=`${esc(C.settings.brand)}<i>${esc(C.settings.tagline)}</i>`);
-  document.querySelectorAll('.brand-txt').forEach(el=>el.textContent=C.settings.brand);
+  document.querySelectorAll('.brand-sm').forEach(el=>{if(!el.querySelector('img'))el.innerHTML='<img src="img/kss-mark.svg" alt="KSS">';});
+  const p=$('#promo'), t=String(C.settings.promo||'').trim(); p.hidden=!t;
+  if(t){const m=t.match(/^(danas|novo|akcija)[:\s]+(.*)$/i);p.innerHTML=m?`<b>${esc(m[1])}</b><span>${esc(m[2])}</span>`:`<span>${esc(t)}</span>`;}
 }
 function go(id){
   document.querySelectorAll('.screen').forEach(s=>s.hidden=s.id!==id); closeOverlay();
@@ -253,7 +253,7 @@ document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g
 
 $('#attract').addEventListener('click',()=>go('dine'));
 document.querySelectorAll('[data-dine]').forEach(b=>b.onclick=()=>{S.dine=b.dataset.dine;go('menu');});
-const dineLabel=()=>(S.dine==='Za van'?'🛍️ ':'🍽️ ')+S.dine;
+const dineLabel=()=>S.dine||'Jedem ovdje';
 $('#dineChip').onclick=()=>{S.dine=S.dine==='Za van'?'Jedem ovdje':'Za van';$('#dineChip').textContent=dineLabel();};
 $('#cancelBtn').onclick=()=>{if(!S.cart.length){reset();return;}
   confirmBox('Poništiti narudžbu?','Svi artikli iz košarice bit će obrisani.','Poništi',reset,'Nastavi naručivati');};
@@ -265,11 +265,13 @@ function renderMenu(){
   $('#rail').querySelectorAll('.cat').forEach(b=>b.onclick=()=>{S.cat=b.dataset.cat;renderMenu();$('#content').scrollTop=0;});
   const c=cat(S.cat); if(!c){$('#content').innerHTML='<p class="cat-sub">Meni je prazan.</p>';return;}
   const items=C.items.filter(i=>i.cat===c.id);
-  $('#content').innerHTML=`<h2>${esc(c.name).toUpperCase()}</h2><p class="cat-sub">${esc(c.sub)}</p><div class="grid">${items.map(i=>`
+  $('#content').innerHTML=`<div class="cat-head"><h2>${esc(c.name).toUpperCase()}</h2><p class="cat-sub">${esc(c.sub)}</p></div><div class="grid">${items.map(i=>`
     <button class="item ${i.on?'':'off'}" data-id="${esc(i.id)}">
+      ${art(i)}<div class="info">
       ${!i.on?'<span class="badge">Rasprodano</span>':i.badge?`<span class="badge">${esc(i.badge)}</span>`:''}
-      ${art(i)}<div class="nm">${esc(i.name)}</div><div class="ds">${esc(i.desc)}</div>
-      <div class="pr money">${eur(i.price)}</div></button>`).join('')||'<p class="cat-sub">Nema artikala u ovoj kategoriji.</p>'}</div>`;
+      <div class="nm">${esc(i.name)}</div><div class="ds">${esc(i.desc)}</div>
+      <div class="foot"><span class="pr money">${eur(i.price)}</span><span class="plus" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></div>
+      </div></button>`).join('')||'<p class="cat-sub">Nema artikala u ovoj kategoriji.</p>'}</div>`;
   $('#content').querySelectorAll('.item').forEach(b=>b.onclick=()=>openItem(b.dataset.id));
   updateBar();
 }
@@ -308,7 +310,7 @@ function renderReview(){
   $('#revList').innerHTML=`<h2>VAŠA NARUDŽBA</h2>`+(L.length?L.map((l,i)=>{const it=itemById(l.id)||{name:'?',e:'?',id:'x'};return `
     <div class="line">${art(it)}
     <div class="mid"><b>${esc(it.name)}</b><small>${esc(l.text)||'&nbsp;'}</small>
-      ${itemGroups(it).length?`<button style="color:var(--mustard);font-weight:700;font-size:14px;padding:4px 0" data-edit="${i}">Uredi</button>`:''}</div>
+      ${itemGroups(it).length?`<button class="edit-link" data-edit="${i}">Uredi</button>`:''}</div>
     <div class="qty"><button data-dq="${i}|-1" aria-label="Manje">${l.qty===1?'🗑':'−'}</button><b>${l.qty}</b><button data-dq="${i}|1" aria-label="Više">+</button></div>
     <div class="lp money">${eur(l.unit*l.qty)}</div></div>`}).join(''):`<div class="empty">Košarica je prazna.<br><br><button class="btn y" data-go="menu">Pogledaj meni</button></div>`);
   const inCart=new Set(L.map(l=>(itemById(l.id)||{}).cat));
@@ -466,14 +468,14 @@ function editItem(id,fresh){
         <div class="f"><span>Opcije koje kupac bira</span><div class="gpick" id="edGroups"></div></div>
       </div>
     </div>
-    <div class="ed-foot">${isNew?'':'<button class="btn light sm" id="edDel" style="color:var(--chili-dk)">Obriši artikl</button>'}
+    <div class="ed-foot">${isNew?'':'<button class="btn light sm del" id="edDel">Obriši artikl</button>'}
       ${isNew?'':'<button class="btn light sm" id="edDup">Kopiraj</button>'}<span class="sp"></span>
       <button class="btn light sm" data-close>Odustani</button><button class="btn sm" id="edSave">Spremi</button></div>
   </div>`);
   const q=s=>ov.querySelector(s);
   const paintArt=()=>{q('#edArt').style.background=tint(d.id);q('#edArt').className='art'+(d.img?' has':'');
     q('#edArt').innerHTML=d.img?`<img src="${esc(d.img)}" alt="">`:esc(d.e||'🍽️');q('#edRm').hidden=!d.img;q('#edUpLbl').textContent=d.img?'Zamijeni fotografiju':'Dodaj fotografiju';};
-  const paintGroups=()=>{q('#edGroups').innerHTML=C.groups.length?C.groups.map(g=>`<button class="gp ${d.groups.includes(g.id)?'on':''}" data-g="${esc(g.id)}">${esc(g.name)}<small>${g.opts.length} opcija · ${g.type==='multi'?'više izbora':'jedan izbor'}</small></button>`).join(''):'<small style="color:var(--ink-soft)">Nema grupa opcija. Dodajte ih u kartici „Opcije i dodaci”.</small>';
+  const paintGroups=()=>{q('#edGroups').innerHTML=C.groups.length?C.groups.map(g=>`<button class="gp ${d.groups.includes(g.id)?'on':''}" data-g="${esc(g.id)}">${esc(g.name)}<small>${g.opts.length} opcija · ${g.type==='multi'?'više izbora':'jedan izbor'}</small></button>`).join(''):'<small style="color:var(--muted)">Nema grupa opcija. Dodajte ih u kartici „Opcije i dodaci”.</small>';
     q('#edGroups').querySelectorAll('.gp').forEach(b=>b.onclick=()=>{const g=b.dataset.g;d.groups=d.groups.includes(g)?d.groups.filter(x=>x!==g):C.groups.map(x=>x.id).filter(x=>d.groups.includes(x)||x===g);paintGroups();});};
   paintArt();paintGroups();
   let uploading=false;
@@ -482,7 +484,7 @@ function editItem(id,fresh){
     if(!CLOUD){d.img=dataUrl;paintArt();return;}
     uploading=true; q('#edSave').classList.add('uploading'); q('#edPhotoNote').textContent='Šaljem fotografiju…'; d.img=dataUrl; paintArt();
     try{d.img=await Cloud.uploadPhoto(dataUrl,d.id);q('#edPhotoNote').textContent='Fotografija je spremljena.';}
-    catch(err){d.img=src.img||'';paintArt();q('#edPhotoNote').textContent='Fotografija nije poslana. Provjerite internetsku vezu i pokušajte ponovno.';}
+    catch(err){d.img=src.img||'';paintArt();const m=String((err&&err.message)||err||'');q('#edPhotoNote').textContent=/security|policy|unauthor|403|bucket/i.test(m)?'Fotografija nije spremljena: baza ne dopušta upload. Pokrenite fix-fotografije.sql u Supabaseu. ('+m+')':'Fotografija nije poslana. Provjerite internetsku vezu i pokušajte ponovno. ('+m+')';}
     finally{uploading=false;q('#edSave').classList.remove('uploading');}
   };
   q('#edRm').onclick=()=>{d.img='';paintArt();};
@@ -572,10 +574,9 @@ function admSettings(){
   const w=$('#admWrap'),s=C.settings;
   let size=0;try{size=new Blob([JSON.stringify(C)]).size;}catch(e){}
   const modeName={kiosk:'Kiosk',blagajna:'Blagajna',admin:'Administracija'}[MODE];
-  w.innerHTML=`<div class="adm-head"><div><h2>POSTAVKE</h2><p class="adm-note">Naziv na kiosku, PIN za osoblje i ponašanje kioska.</p></div></div>
+  w.innerHTML=`<div class="adm-head"><div><h2>POSTAVKE</h2><p class="adm-note">Poruka na početnom ekranu, PIN za osoblje i ponašanje kioska. Poruka koja počinje s „Danas:”, „Novo:” ili „Akcija:” ističe tu riječ žutom bojom; prazna poruka se ne prikazuje.</p></div></div>
   <div class="panel"><div class="two">
-    <label class="f"><span>Naziv (logo)</span><input class="inp" data-k="brand" value="${esc(s.brand)}"></label>
-    <label class="f"><span>Podnaslov</span><input class="inp" data-k="tagline" value="${esc(s.tagline)}"></label>
+    <label class="f" style="grid-column:1/-1"><span>Poruka na početnom ekranu</span><input class="inp" data-k="promo" value="${esc(s.promo||'')}" placeholder="npr. Danas: domaća štrudla 2,00 €" maxlength="60"></label>
     <label class="f"><span>PIN za osoblje (4–6 znamenki)</span><input class="inp" id="pinInp" inputmode="numeric" maxlength="6" value="${esc(s.pin)}"></label>
     <label class="f"><span>Stopa PDV-a (%)</span><input class="inp" data-k="vat" type="number" min="0" max="30" value="${esc(s.vat)}"></label>
     <label class="f"><span>Neaktivnost prije upozorenja (s)</span><input class="inp" data-k="idle" type="number" min="20" max="600" value="${esc(s.idle)}"></label>

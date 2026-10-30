@@ -59,7 +59,7 @@ Svaka nova promjena koju prenesete na GitHub automatski gradi nove APK-ove.
 Datoteke iz `KSS-admin-web` možete objaviti na bilo kojem hostingu. Najjednostavnije je ovako:
 
 - **Netlify Drop:** otvorite [app.netlify.com/drop](https://app.netlify.com/drop) i povucite raspakiranu mapu. Dobit ćete adresu koju otvorite na mobitelu i prijavite se računom lokala.
-- **GitHub Pages:** radi automatski ako je repozitorij javan ili imate plaćeni GitHub. Uključite ga u **Settings → Pages → Source: GitHub Actions**.
+- **GitHub Pages** (samo javni repozitorij ili plaćeni GitHub): uključite **Settings → Pages → Source: GitHub Actions**, pa u **Settings → Secrets and variables → Actions → Variables** dodajte varijablu `KSS_PAGES` = `true`. Bez toga se taj korak preskače.
 
 Administraciju možete otvoriti i na blagajni (tab Artikli, Kategorije, Opcije, Postavke).
 
@@ -68,6 +68,7 @@ Administraciju možete otvoriti i na blagajni (tab Artikli, Kategorije, Opcije, 
 - **Rasprodano:** na blagajni otvorite Artikli, dodirnite artikl, isključite „Dostupno za narudžbu” i spremite. Kiosk to prikaže za sekundu-dvije.
 - **Nova cijena:** promijenite je u aplikaciji **i u Pelionu**, da kupac na blagajni plati isto što je vidio na kiosku.
 - **Bez interneta:** kiosk i dalje prima narudžbe, s brojevima od 901 nadalje (označeni „bez veze”). Šalje ih na blagajnu čim se veza vrati. Blagajna u tom vremenu ne vidi nove narudžbe, pa kupac s brojem 9xx kaže narudžbu na blagajni.
+- **Poruka na početnom ekranu:** u Postavkama upišite npr. „Danas: domaća štrudla 2,00 €”; prazno polje skriva poruku.
 - **Ulaz u uređivanje na kiosku:** 5 brzih dodira na logo u gornjem lijevom kutu menija, pa PIN.
 - **Stare narudžbe** (starije od 30 dana) blagajna briše automatski.
 

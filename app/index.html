@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#17151a">
 <title>KSS Street Food</title>
-<link rel="stylesheet" href="vendor/fonts.css" onerror="this.remove()">
+<link rel="stylesheet" href="vendor/fonts.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,7 +16,7 @@
   </section>
 
   <section class="screen center" id="login" hidden>
-    <div class="logo-sm" style="font-size:56px">KSS<i>STREET FOOD</i></div>
+    <img class="login-logo" src="img/kss-logo.svg" alt="KSS Street Food">
     <form class="login" id="loginForm" novalidate>
       <div class="q" style="font-size:36px" id="loginTitle">Prijava uređaja</div>
       <label class="f"><span>E-mail lokala</span><input class="inp" id="lgEmail" type="email" autocomplete="username" required></label>
@@ -28,17 +28,17 @@
   </section>
 
   <section class="screen" id="attract" hidden>
-    <div class="logo-big"><b id="brandBig" style="font-weight:400">KSS</b><span id="tagBig">STREET FOOD</span></div>
-    <div class="attract-hero" aria-hidden="true">🍔</div>
+    <div class="promo" id="promo" hidden></div>
+    <img class="logo-hero" src="img/kss-logo.svg" alt="KSS Street Food">
     <button class="tap" id="startBtn">DODIRNI ZA NARUDŽBU</button>
-    <div class="attract-sub">Naruči ovdje · Plati na blagajni</div>
+    <div class="attract-sub">Naruči ovdje · plati na blagajni</div>
   </section>
 
   <section class="screen" id="dine" hidden>
     <div class="q">Gdje ćete jesti danas?</div>
     <div class="dine-row">
-      <button class="dine-card" data-dine="Jedem ovdje"><span class="ico">🍽️</span><b>JEDEM OVDJE</b><small>Poslužujemo na pultu</small></button>
-      <button class="dine-card" data-dine="Za van"><span class="ico">🛍️</span><b>ZA VAN</b><small>Pakiramo u vrećicu</small></button>
+      <button class="dine-card" data-dine="Jedem ovdje"><svg class="ico-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="6.5"/><path d="M3 3v6a2 2 0 0 0 2 2M5 3v18M21 3c-1.5 1-2 3-2 6v2h2V21"/></svg><b>JEDEM OVDJE</b><small>Poslužujemo na pultu</small></button>
+      <button class="dine-card" data-dine="Za van"><svg class="ico-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 13H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><b>ZA VAN</b><small>Pakiramo u vrećicu</small></button>
     </div>
     <button class="back-link" data-go="attract">← Natrag</button>
   </section>
@@ -88,7 +88,7 @@
 
   <section class="screen" id="admin" hidden>
     <header class="topbar">
-      <span class="logo-sm"><span class="brand-txt">KSS</span><i id="admTitle">UREĐIVANJE</i></span>
+      <span class="logo-sm"><img src="img/kss-mark.svg" alt="KSS"><i id="admTitle">UREĐIVANJE</i></span>
       <div class="top-actions">
         <span class="pill alt" id="syncPill">…</span>
         <button class="pill" id="admExit">Gotovo · natrag na kiosk</button>
