@@ -48,6 +48,7 @@ for (const mode of modes) {
   fs.mkdirSync(path.join(out, 'vendor'), { recursive: true });
   for (const f of ['index.html', 'app.js', 'style.css']) fs.copyFileSync(path.join(root, 'app', f), path.join(out, f));
   fs.cpSync(path.join(root, 'app', 'img'), path.join(out, 'img'), { recursive: true });
+  fs.cpSync(path.join(root, 'app', 'data'), path.join(out, 'data'), { recursive: true });
 
   const sbUmd = path.join(root, 'node_modules', '@supabase', 'supabase-js', 'dist', 'umd', 'supabase.js');
   if (fs.existsSync(sbUmd)) fs.copyFileSync(sbUmd, path.join(out, 'vendor', 'supabase.js'));
