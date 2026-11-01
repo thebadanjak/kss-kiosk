@@ -285,3 +285,46 @@ textarea.inp{resize:vertical;min-height:90px;font-family:ui-monospace,Menlo,mono
   .logo-sm i{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- Artikli: pretraga, odabir više, raspored ---------- */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.search{flex:1;min-width:220px;position:relative;display:flex;align-items:center}
+.search .ico-svg{position:absolute;left:14px;width:20px;height:20px;color:var(--muted);pointer-events:none}
+.search .inp{padding-left:44px;font-size:16px;height:48px}
+.acard{position:relative}
+.acard .cats{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acard .cats small{color:var(--yellow);font-size:12px}
+.acard.pick .art{opacity:.75}
+.acard.sel{border-color:var(--yellow);background:var(--s3)}
+.acard.sel .art{opacity:1}
+.tick{position:absolute;top:10px;left:10px;z-index:3;width:30px;height:30px;border-radius:8px;border:2px solid var(--text);background:rgba(0,0,0,.55);display:grid;place-items:center;color:transparent}
+.tick svg{width:20px;height:20px}
+.acard.sel .tick{background:var(--yellow);border-color:var(--yellow);color:var(--bg)}
+.selbar{position:sticky;bottom:0;z-index:6;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--s1);border:1.5px solid var(--yellow);border-radius:16px;padding:12px 14px;box-shadow:0 -10px 30px rgba(0,0,0,.5)}
+.selbar b{font-size:17px;margin-right:4px}
+.selbar .sp{flex:1}
+.btn.del{color:var(--bad)}
+.sortlist{display:flex;flex-direction:column;gap:8px}
+.srow{display:flex;align-items:center;gap:12px;background:var(--s2);border-radius:14px;padding:8px 10px;border:2px solid transparent;touch-action:pan-y}
+.srow.drag{border-color:var(--yellow);background:var(--s3);position:relative;z-index:5;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.srow .handle{width:44px;height:56px;display:grid;place-items:center;color:var(--muted);cursor:grab;touch-action:none;flex:none}
+.srow .handle .ico-svg{width:24px;height:24px}
+.srow .spos{width:28px;text-align:right;color:var(--muted);font-weight:600;flex:none}
+.srow .art{width:56px;height:56px;border-radius:10px;font-size:30px;flex:none}
+.srow .sname{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.srow .sname b{font-weight:600;font-size:16px}
+.srow .sprice{color:var(--yellow);font-weight:700;flex:none}
+.modal.bulk{text-align:left;max-width:620px}
+.modal.bulk .row{justify-content:flex-end}
+.bgrid{display:flex;flex-direction:column;gap:10px;max-height:52vh;overflow-y:auto}
+.brow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--s2);border-radius:12px;padding:10px 12px}
+.brow span{display:flex;flex-direction:column}
+.brow small{color:var(--muted);font-size:13px}
+.seg{display:flex;background:var(--bg);border-radius:10px;padding:3px;gap:3px}
+.seg button{padding:9px 12px;border-radius:8px;font-size:14px;font-weight:600;color:var(--muted)}
+.seg button.on{background:var(--red);color:#fff}
+@media (max-width:720px){
+  .srow .sprice,.srow .spos{display:none}
+  .selbar .sp{display:none}
+}
+.srow .nophoto{display:none}

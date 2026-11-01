@@ -65,6 +65,7 @@ Administraciju možete otvoriti i na blagajni (tab Artikli, Kategorije, Opcije, 
 
 ## Svakodnevni rad
 
+- **Artikli:** pretraga po nazivu, „Odaberi više” za skupnu promjenu kategorije, sekundarne kategorije, opcija i vidljivosti, te „Promijeni raspored” (najprije odaberite kategoriju) za redoslijed na kiosku.
 - **Rasprodano:** na blagajni otvorite Artikli, dodirnite artikl, isključite „Dostupno za narudžbu” i spremite. Kiosk to prikaže za sekundu-dvije.
 - **Nova cijena:** promijenite je u aplikaciji **i u Pelionu**, da kupac na blagajni plati isto što je vidio na kiosku.
 - **Bez interneta:** kiosk i dalje prima narudžbe, s brojevima od 901 nadalje (označeni „bez veze”). Šalje ih na blagajnu čim se veza vrati. Blagajna u tom vremenu ne vidi nove narudžbe, pa kupac s brojem 9xx kaže narudžbu na blagajni.

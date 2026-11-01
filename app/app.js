@@ -178,7 +178,7 @@ function applyRemoteMenu(cfg){
   const vis=[...document.querySelectorAll('.screen')].find(s=>!s.hidden);
   if(!vis)return;
   if(vis.id==='menu')renderMenu();
-  if(vis.id==='admin'&&!document.querySelector('.overlay')&&A.tab!=='orders'){renderAdmin();toast('Meni je promijenjen na drugom uređaju');}
+  if(vis.id==='admin'&&!document.querySelector('.overlay')&&A.tab!=='orders'){if(A.tab==='items'&&$('#itemGrid'))renderItemGrid();else renderAdmin();toast('Meni je promijenjen na drugom uređaju');}
 }
 async function syncMenu(){
   try{
@@ -259,7 +259,8 @@ $('#cancelBtn').onclick=()=>{if(!S.cart.length){reset();return;}
   confirmBox('Poništiti narudžbu?','Svi artikli iz košarice bit će obrisani.','Poništi',reset,'Nastavi naručivati');};
 
 const shown=i=>!i.hidden;
-const shownCats=()=>C.cats.filter(c=>C.items.some(i=>i.cat===c.id&&shown(i)));
+const inCat=(i,cid)=>i.cat===cid||(i.cats2||[]).includes(cid);
+const shownCats=()=>C.cats.filter(c=>C.items.some(i=>inCat(i,c.id)&&shown(i)));
 function renderMenu(){
   const vc=shownCats();
   if(!vc.some(c=>c.id===S.cat))S.cat=(vc[0]||{}).id;
@@ -267,7 +268,7 @@ function renderMenu(){
   $('#rail').innerHTML=vc.map(c=>`<button class="cat ${c.id===S.cat?'on':''}" data-cat="${esc(c.id)}"><span class="e">${esc(c.e)}</span>${esc(c.name)}</button>`).join('');
   $('#rail').querySelectorAll('.cat').forEach(b=>b.onclick=()=>{S.cat=b.dataset.cat;renderMenu();$('#content').scrollTop=0;});
   const c=cat(S.cat); if(!c){$('#content').innerHTML='<p class="cat-sub">Meni je prazan.</p>';return;}
-  const items=C.items.filter(i=>i.cat===c.id&&shown(i));
+  const items=C.items.filter(i=>inCat(i,c.id)&&shown(i));
   $('#content').innerHTML=`<div class="cat-head"><h2>${esc(c.name).toUpperCase()}</h2><p class="cat-sub">${esc(c.sub)}</p></div><div class="grid">${items.map(i=>`
     <button class="item ${i.on?'':'off'}" data-id="${esc(i.id)}">
       ${art(i)}<div class="info">
@@ -317,7 +318,7 @@ function renderReview(){
     <div class="qty"><button data-dq="${i}|-1" aria-label="Manje">${l.qty===1?'🗑':'−'}</button><b>${l.qty}</b><button data-dq="${i}|1" aria-label="Više">+</button></div>
     <div class="lp money">${eur(l.unit*l.qty)}</div></div>`}).join(''):`<div class="empty">Košarica je prazna.<br><br><button class="btn y" data-go="menu">Pogledaj meni</button></div>`);
   const inCart=new Set(L.map(l=>(itemById(l.id)||{}).cat));
-  const pick=(c,n)=>inCart.has(c)?[]:C.items.filter(i=>i.cat===c&&i.on&&shown(i)).slice(0,n);
+  const pick=(c,n)=>inCart.has(c)?[]:C.items.filter(i=>inCat(i,c)&&i.on&&shown(i)).slice(0,n);
   const sug=[...pick('drink',3),...pick('fries',1),...pick('dessert',2)].slice(0,5);
   if(L.length&&sug.length)$('#revList').insertAdjacentHTML('beforeend',`<div class="upsell"><h3>Možda vam se svidi i…</h3><div class="up-row">${sug.map(i=>`<button class="up" data-up="${esc(i.id)}">${art(i)}<b>${esc(i.name)}</b><small class="money">+ ${eur(i.price)}</small></button>`).join('')}</div></div>`);
   const t=total(),v=+C.settings.vat||0,pdv=t-t/(1+v/100);
@@ -353,7 +354,7 @@ function overlay(html,mid){closeOverlay();const o=document.createElement('div');
 function closeOverlay(){document.querySelectorAll('.overlay').forEach(o=>o.remove());}
 function modal(html,cb){const o=overlay(`<div class="modal">${html}</div>`,true);o.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{closeOverlay();cb&&cb(b.dataset.m);});return o;}
 function confirmBox(title,text,yes,onYes,no='Odustani'){modal(`<h3>${esc(title)}</h3><p>${esc(text)}</p><div class="row"><button class="btn light" data-m="no">${esc(no)}</button><button class="btn" data-m="yes">${esc(yes)}</button></div>`,m=>{if(m==='yes')onYes();});}
-function toast(t,bad){const d=document.createElement('div');d.className='toast'+(bad?' bad':'');d.textContent=(bad?'':'✓ ')+t;$('#app').appendChild(d);setTimeout(()=>d.remove(),bad?3500:1600);}
+function toast(t,bad){document.querySelectorAll('.toast').forEach(x=>x.remove());const d=document.createElement('div');d.className='toast'+(bad?' bad':'');d.textContent=(bad?'':'✓ ')+t;$('#app').appendChild(d);setTimeout(()=>d.remove(),bad?3500:1600);}
 
 /* ---------- idle ---------- */
 function armIdle(on){clearTimeout(idleT);clearInterval(idleIv);if(on)idleT=setTimeout(idleWarn,(+C.settings.idle||60)*1000);}
@@ -380,7 +381,7 @@ $('#unlockBtn').onclick=()=>askPin();
    ADMIN
    ===================================================================== */
 let A={tab:MODE==='kiosk'?'items':'orders',filter:'all',of:'open'};
-document.querySelectorAll('[data-tab]').forEach(t=>t.onclick=()=>{A.tab=t.dataset.tab;renderAdmin();$('#admBody').scrollTop=0;});
+document.querySelectorAll('[data-tab]').forEach(t=>t.onclick=()=>{A.tab=t.dataset.tab;A.multi=false;A.sort=false;if(A.sel)A.sel.clear();renderAdmin();$('#admBody').scrollTop=0;});
 $('#admExit').onclick=()=>{S.cart=[];if(MODE==='blagajna'){go('lock');return;}if(MODE==='admin')return;toast('Promjene spremljene');go('attract');};
 
 function renderAdmin(){
@@ -417,23 +418,152 @@ function admOrders(){
 }
 
 /* ---- Items ---- */
+const norm=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d');
+function itemsInView(){
+  const q=norm(A.q).trim();
+  return C.items.filter(i=>(A.filter==='all'||(A.filter==='hidden'?i.hidden:inCat(i,A.filter)))&&(!q||norm(i.name).includes(q)||norm(i.desc).includes(q)));
+}
 function admItems(){
-  const w=$('#admWrap'); const list=C.items.filter(i=>A.filter==='all'||(A.filter==='hidden'?i.hidden:i.cat===A.filter));
+  const w=$('#admWrap');
+  if(!A.sel)A.sel=new Set();
   const noPhoto=C.items.filter(i=>!i.img).length, nHidden=C.items.filter(i=>i.hidden).length;
-  w.innerHTML=`<div class="adm-head"><div><h2>ARTIKLI</h2><p class="adm-note">Dodirnite artikl za uređivanje naziva, cijene, fotografije, opcija i dostupnosti. ${CLOUD?'Promjene se odmah šalju na sve uređaje lokala.':''} ${noPhoto?`${noPhoto} artikala još nema fotografiju.`:'Svi artikli imaju fotografiju.'}</p></div>
+  const oneCat=A.filter!=='all'&&A.filter!=='hidden';
+  if(A.sort&&!oneCat)A.sort=false;
+  w.innerHTML=`<div class="adm-head"><div><h2>ARTIKLI</h2><p class="adm-note">Dodirnite artikl za uređivanje. ${CLOUD?'Promjene se odmah šalju na sve uređaje lokala.':''} ${noPhoto?`${noPhoto} artikala još nema fotografiju.`:''}</p></div>
     <button class="btn y sm" id="addItem">+ Novi artikl</button></div>
-    <div class="chips"><button class="chip ${A.filter==='all'?'on':''}" data-f="all">Sve (${C.items.length})</button>${nHidden?`<button class="chip ${A.filter==='hidden'?'on':''}" data-f="hidden">Nije na jelovniku (${nHidden})</button>`:''}${C.cats.map(c=>`<button class="chip ${A.filter===c.id?'on':''}" data-f="${esc(c.id)}">${esc(c.e)} ${esc(c.name)} (${C.items.filter(i=>i.cat===c.id).length})</button>`).join('')}</div>
-    <div class="agrid">${list.map(i=>`<button class="acard ${i.on?'':'off'}" data-id="${esc(i.id)}">
-      <div class="art" style="background:${tint(i.id)}">${esc(i.e)}${i.img?`<img src="${esc(i.img)}" alt="" loading="lazy" onerror="this.remove()">`:'<span class="nophoto">BEZ FOTO</span>'}</div>
-      <div class="meta"><b>${esc(i.name)}</b><span><span>${esc((cat(i.cat)||{name:'—'}).name)}</span><span class="money">${eur(i.price)}</span></span>
-      ${i.hidden?'<span><span class="st">Nije na jelovniku</span></span>':i.on?'':'<span><span class="st no">Rasprodano</span></span>'}</div></button>`).join('')||'<p class="adm-note">Nema artikala.</p>'}</div>`;
+    <div class="toolbar">
+      <label class="search"><svg class="ico-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="inp" id="itemQ" type="search" placeholder="Traži po nazivu…" value="${esc(A.q||'')}" autocomplete="off" aria-label="Traži artikle"></label>
+      <button class="btn ${A.multi?'y':'ghost'} sm" id="multiBtn">${A.multi?'Gotovo s odabirom':'Odaberi više'}</button>
+      <button class="btn ${A.sort?'y':'ghost'} sm" id="sortBtn" ${oneCat?'':'disabled title="Najprije odaberite kategoriju"'}>${A.sort?'Gotovo s rasporedom':'Promijeni raspored'}</button>
+    </div>
+    <div class="chips"><button class="chip ${A.filter==='all'?'on':''}" data-f="all">Sve (${C.items.length})</button>${nHidden?`<button class="chip ${A.filter==='hidden'?'on':''}" data-f="hidden">Nije na jelovniku (${nHidden})</button>`:''}${C.cats.map(c=>`<button class="chip ${A.filter===c.id?'on':''}" data-f="${esc(c.id)}">${esc(c.e)} ${esc(c.name)} (${C.items.filter(i=>inCat(i,c.id)).length})</button>`).join('')}</div>
+    ${A.sort?`<p class="adm-note">Povucite artikl za ručku ili koristite strelice. Ovim redoslijedom artikli se prikazuju na kiosku u kategoriji „${esc((cat(A.filter)||{}).name)}”.</p>`:''}
+    <div id="itemGrid"></div>
+    <div class="selbar" id="selBar" hidden></div>`;
   w.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{A.filter=c.dataset.f;admItems();});
-  w.querySelectorAll('.acard').forEach(c=>c.onclick=()=>editItem(c.dataset.id));
+  const qi=$('#itemQ'); qi.oninput=()=>{A.q=qi.value;renderItemGrid();};
+  $('#multiBtn').onclick=()=>{A.multi=!A.multi;A.sort=false;A.sel.clear();admItems();};
+  $('#sortBtn').onclick=()=>{A.sort=!A.sort;A.multi=false;A.sel.clear();if(A.sort)A.q='';admItems();};
   $('#addItem').onclick=()=>{
     if(!C.cats.length){toast('Najprije dodajte kategoriju.',true);return;}
-    const cid=(A.filter!=='all'&&A.filter!=='hidden')?A.filter:C.cats[0].id;
-    editItem(null,{id:uid('i'),cat:cid,e:cat(cid).e,name:'',desc:'',price:0,badge:'',on:true,img:'',groups:[...cat(cid).groups]});
+    const cid=oneCat?A.filter:C.cats[0].id;
+    editItem(null,{id:uid('i'),cat:cid,cats2:[],e:cat(cid).e,name:'',desc:'',price:0,badge:'',on:true,img:'',groups:[...cat(cid).groups]});
   };
+  renderItemGrid();
+}
+function itemArt(i){return `<div class="art" style="background:${tint(i.id)}">${esc(i.e)}${i.img?`<img src="${esc(i.img)}" alt="" loading="lazy" onerror="this.remove()">`:'<span class="nophoto">BEZ FOTO</span>'}</div>`;}
+function itemStatus(i){return i.hidden?'<span class="st">Nije na jelovniku</span>':i.on?'':'<span class="st no">Rasprodano</span>';}
+function itemCats(i){const sec=(i.cats2||[]).map(id=>(cat(id)||{}).name).filter(Boolean);return esc((cat(i.cat)||{name:'—'}).name)+(sec.length?` <small>+ ${esc(sec.join(', '))}</small>`:'');}
+function renderItemGrid(){
+  const g=$('#itemGrid'); if(!g)return;
+  const list=itemsInView();
+  if(A.sort){
+    g.innerHTML=`<div class="sortlist" id="sortList">${list.map((i,k)=>`<div class="srow" data-id="${esc(i.id)}">
+      <button class="handle" aria-label="Povuci za premještanje"><svg class="ico-svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button>
+      <span class="spos money">${k+1}</span>${itemArt(i)}<span class="sname"><b>${esc(i.name)}</b>${itemStatus(i)}</span>
+      <span class="money sprice">${eur(i.price)}</span>
+      <button class="ic" data-mv="top" aria-label="Na vrh" ${k===0?'disabled':''}>⤒</button><button class="ic" data-mv="-1" aria-label="Gore" ${k===0?'disabled':''}>↑</button><button class="ic" data-mv="1" aria-label="Dolje" ${k===list.length-1?'disabled':''}>↓</button></div>`).join('')||'<p class="adm-note">Nema artikala u ovoj kategoriji.</p>'}</div>`;
+    g.querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>{
+      const ids=list.map(i=>i.id), id=b.closest('.srow').dataset.id, k=ids.indexOf(id);
+      ids.splice(k,1); const to=b.dataset.mv==='top'?0:k+ +b.dataset.mv; ids.splice(to,0,id);
+      applyOrder(ids,list); renderItemGrid();});
+    enableDrag(g.querySelector('#sortList'),list);
+    paintSelBar(); return;
+  }
+  g.innerHTML=`<div class="agrid">${list.map(i=>`<button class="acard ${i.on?'':'off'} ${A.multi?'pick':''} ${A.sel.has(i.id)?'sel':''}" data-id="${esc(i.id)}" ${A.multi?`aria-pressed="${A.sel.has(i.id)}"`:''}>
+      ${A.multi?'<span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></span>':''}
+      ${itemArt(i)}
+      <div class="meta"><b>${esc(i.name)}</b><span><span class="cats">${itemCats(i)}</span><span class="money">${eur(i.price)}</span></span>
+      ${itemStatus(i)?`<span>${itemStatus(i)}</span>`:''}</div></button>`).join('')||`<p class="adm-note">${A.q?`Nema artikala koji odgovaraju pretrazi „${esc(A.q)}”.`:'Nema artikala.'}</p>`}</div>`;
+  g.querySelectorAll('.acard').forEach(c=>c.onclick=()=>{
+    if(!A.multi){editItem(c.dataset.id);return;}
+    const id=c.dataset.id; if(A.sel.has(id))A.sel.delete(id);else A.sel.add(id);
+    c.classList.toggle('sel',A.sel.has(id)); c.setAttribute('aria-pressed',A.sel.has(id)); paintSelBar();});
+  paintSelBar();
+}
+/* order: the subset in view gets the new order inside the slots it already occupies in C.items */
+function applyOrder(ids,list){
+  const set=new Set(list.map(i=>i.id)); const slots=[]; C.items.forEach((it,k)=>{if(set.has(it.id))slots.push(k);});
+  const byId=Object.fromEntries(list.map(i=>[i.id,i])); const next=C.items.slice();
+  slots.forEach((slot,k)=>{next[slot]=byId[ids[k]];}); C.items=next; save();
+}
+function enableDrag(box,list){
+  if(!box)return;
+  box.querySelectorAll('.handle').forEach(h=>h.addEventListener('pointerdown',e=>{
+    e.preventDefault(); const row=h.closest('.srow'); h.setPointerCapture(e.pointerId);
+    row.classList.add('drag'); let lastY=e.clientY;
+    const move=ev=>{
+      const dy=ev.clientY-lastY; row.style.transform=`translateY(${dy}px)`;
+      const rows=[...box.querySelectorAll('.srow')], r=row.getBoundingClientRect(), mid=r.top+r.height/2;
+      const prev=row.previousElementSibling, next=row.nextElementSibling;
+      if(prev&&mid<prev.getBoundingClientRect().top+prev.offsetHeight/2){box.insertBefore(prev,row.nextSibling);lastY=ev.clientY;row.style.transform='';}
+      else if(next&&mid>next.getBoundingClientRect().top+next.offsetHeight/2){box.insertBefore(next,row);lastY=ev.clientY;row.style.transform='';}
+      const sc=$('#admBody'),br=sc.getBoundingClientRect(); if(ev.clientY<br.top+60)sc.scrollTop-=12; else if(ev.clientY>br.bottom-60)sc.scrollTop+=12;
+    };
+    const up=()=>{h.removeEventListener('pointermove',move);h.removeEventListener('pointerup',up);h.removeEventListener('pointercancel',up);
+      row.classList.remove('drag');row.style.transform='';
+      applyOrder([...box.querySelectorAll('.srow')].map(r=>r.dataset.id),list); renderItemGrid();};
+    h.addEventListener('pointermove',move);h.addEventListener('pointerup',up);h.addEventListener('pointercancel',up);
+  }));
+}
+function paintSelBar(){
+  const b=$('#selBar'); if(!b)return;
+  if(!A.multi){b.hidden=true;return;}
+  const n=A.sel.size, vis=itemsInView();
+  b.hidden=false;
+  b.innerHTML=`<b class="money">${n} odabrano</b>
+    <button class="btn ghost sm" data-b="all">${vis.length&&vis.every(i=>A.sel.has(i.id))?'Poništi odabir':`Označi sve prikazane (${vis.length})`}</button>
+    <span class="sp"></span>
+    <button class="btn sm" data-b="cat" ${n?'':'disabled'}>Kategorija</button>
+    <button class="btn sm" data-b="cat2" ${n?'':'disabled'}>Sekundarna kategorija</button>
+    <button class="btn sm" data-b="opts" ${n?'':'disabled'}>Opcije</button>
+    <button class="btn sm" data-b="vis" ${n?'':'disabled'}>Jelovnik i dostupnost</button>
+    <button class="btn ghost sm del" data-b="del" ${n?'':'disabled'}>Obriši</button>`;
+  b.querySelector('[data-b="all"]').onclick=()=>{if(vis.every(i=>A.sel.has(i.id)))vis.forEach(i=>A.sel.delete(i.id));else vis.forEach(i=>A.sel.add(i.id));renderItemGrid();};
+  b.querySelectorAll('[data-b]').forEach(x=>{if(x.dataset.b!=='all')x.onclick=()=>bulk(x.dataset.b);});
+}
+function bulkDone(msg){save();closeOverlay();toast(msg);renderItemGrid();}
+function bulkSheet(title,body){return overlay(`<div class="modal bulk"><h3>${esc(title)}</h3><p>${A.sel.size} odabranih artikala</p>${body}</div>`,true);}
+function bulk(kind){
+  const sel=C.items.filter(i=>A.sel.has(i.id)), n=sel.length; if(!n)return;
+  const catOpts=C.cats.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+  if(kind==='cat'){
+    const o=bulkSheet('Glavna kategorija',`<label class="f"><span>Premjesti u kategoriju</span><select class="inp" id="bkCat">${catOpts}</select></label>
+      <label class="chk"><input type="checkbox" id="bkCatG"> Postavi i zadane opcije te kategorije</label>
+      <div class="row"><button class="btn light" data-close>Odustani</button><button class="btn" id="bkGo">Premjesti</button></div>`);
+    o.querySelector('#bkGo').onclick=()=>{const cid=o.querySelector('#bkCat').value,g=o.querySelector('#bkCatG').checked;
+      sel.forEach(i=>{i.cat=cid;i.cats2=(i.cats2||[]).filter(x=>x!==cid);if(g)i.groups=[...cat(cid).groups];});bulkDone(`${n} artikala premješteno u „${cat(cid).name}”`);};
+  }
+  if(kind==='cat2'){
+    const o=bulkSheet('Sekundarna kategorija',`<p class="adm-note" style="margin:0">Artikl se uz svoju glavnu kategoriju prikazuje i u ovoj.</p><label class="f"><span>Kategorija</span><select class="inp" id="bkCat">${catOpts}</select></label>
+      <div class="row"><button class="btn light" data-close>Odustani</button><button class="btn light" id="bkRm">Ukloni iz nje</button><button class="btn" id="bkAdd">Dodaj u nju</button></div>`);
+    o.querySelector('#bkAdd').onclick=()=>{const cid=o.querySelector('#bkCat').value;sel.forEach(i=>{if(i.cat!==cid&&!(i.cats2||[]).includes(cid))i.cats2=[...(i.cats2||[]),cid];});bulkDone(`Dodano u „${cat(cid).name}”`);};
+    o.querySelector('#bkRm').onclick=()=>{const cid=o.querySelector('#bkCat').value;sel.forEach(i=>{i.cats2=(i.cats2||[]).filter(x=>x!==cid);});bulkDone(`Uklonjeno iz „${cat(cid).name}”`);};
+  }
+  if(kind==='opts'){
+    const st={}; C.groups.forEach(g=>{const has=sel.filter(i=>(i.groups||[]).includes(g.id)).length;st[g.id]=has===n?'all':has?'some':'none';});
+    const lbl={all:'imaju svi',some:'imaju neki',none:'nema nitko'};
+    const o=bulkSheet('Opcije',`<div class="bgrid">${C.groups.map(g=>`<div class="brow" data-g="${esc(g.id)}"><span><b>${esc(g.name)}</b><small>${lbl[st[g.id]]}</small></span>
+      <div class="seg"><button data-v="keep" class="on">Ne mijenjaj</button><button data-v="add">Dodaj</button><button data-v="rm">Ukloni</button></div></div>`).join('')||'<p class="adm-note">Nema grupa opcija.</p>'}</div>
+      <div class="row"><button class="btn light" data-close>Odustani</button><button class="btn" id="bkGo">Primijeni</button></div>`);
+    o.querySelectorAll('.seg').forEach(sg=>sg.querySelectorAll('button').forEach(b=>b.onclick=()=>{sg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));}));
+    o.querySelector('#bkGo').onclick=()=>{
+      const ch={}; o.querySelectorAll('.brow').forEach(r=>{ch[r.dataset.g]=r.querySelector('.seg .on').dataset.v;});
+      sel.forEach(i=>{let gs=new Set(i.groups||[]);Object.entries(ch).forEach(([g,v])=>{if(v==='add')gs.add(g);if(v==='rm')gs.delete(g);});i.groups=C.groups.map(g=>g.id).filter(g=>gs.has(g));});
+      bulkDone(`Opcije promijenjene na ${n} artikala`);};
+  }
+  if(kind==='vis'){
+    const o=bulkSheet('Jelovnik i dostupnost',`<div class="bgrid">
+      <div class="brow"><span><b>Na jelovniku</b><small>vidi li ih kupac</small></span><div class="seg" id="sgV"><button data-v="keep" class="on">Ne mijenjaj</button><button data-v="show">Prikaži</button><button data-v="hide">Sakrij</button></div></div>
+      <div class="brow"><span><b>Dostupnost</b><small>rasprodano se prikazuje sivo</small></span><div class="seg" id="sgO"><button data-v="keep" class="on">Ne mijenjaj</button><button data-v="on">Dostupno</button><button data-v="off">Rasprodano</button></div></div></div>
+      <div class="row"><button class="btn light" data-close>Odustani</button><button class="btn" id="bkGo">Primijeni</button></div>`);
+    o.querySelectorAll('.seg').forEach(sg=>sg.querySelectorAll('button').forEach(b=>b.onclick=()=>{sg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));}));
+    o.querySelector('#bkGo').onclick=()=>{const v=o.querySelector('#sgV .on').dataset.v,a=o.querySelector('#sgO .on').dataset.v;
+      sel.forEach(i=>{if(v!=='keep')i.hidden=v==='hide';if(a!=='keep')i.on=a==='on';});bulkDone(`Promijenjeno ${n} artikala`);};
+  }
+  if(kind==='del'){
+    confirmBox(`Obrisati ${n} artikala?`,'Artikli će nestati s menija. Ovo se ne može poništiti.','Obriši',()=>{C.items=C.items.filter(i=>!A.sel.has(i.id));A.sel.clear();save();toast(`Obrisano ${n} artikala`);admItems();});
+  }
 }
 function compress(file){return new Promise((res,rej)=>{
   if(!file||!/^image\//.test(file.type)){rej(new Error('type'));return;}
@@ -466,6 +596,7 @@ function editItem(id,fresh){
           <label class="f"><span>Kategorija</span><select class="inp" id="edCat">${C.cats.map(c=>`<option value="${esc(c.id)}" ${c.id===d.cat?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
           <label class="f"><span>Oznaka</span><input class="inp" id="edBadge" value="${esc(d.badge)}" placeholder="npr. Novo, Ljuto" list="badges"></label>
         </div>
+        <div class="f"><span>Prikaži i u kategorijama (sekundarne)</span><div class="chips" id="edCats2"></div></div>
         <datalist id="badges"><option>Najprodavanije</option><option>Novo</option><option>Ljuto</option><option>Veggie</option><option>18+</option><option>Akcija</option></datalist>
         <label class="chk"><input type="checkbox" id="edShow" ${d.hidden?'':'checked'}> Prikaži na jelovniku</label>
         <label class="chk"><input type="checkbox" id="edOn" ${d.on?'checked':''}> Dostupno za narudžbu (isključite kad je rasprodano)</label>
@@ -481,7 +612,10 @@ function editItem(id,fresh){
     q('#edArt').innerHTML=d.img?`<img src="${esc(d.img)}" alt="">`:esc(d.e||'🍽️');q('#edRm').hidden=!d.img;q('#edUpLbl').textContent=d.img?'Zamijeni fotografiju':'Dodaj fotografiju';};
   const paintGroups=()=>{q('#edGroups').innerHTML=C.groups.length?C.groups.map(g=>`<button class="gp ${d.groups.includes(g.id)?'on':''}" data-g="${esc(g.id)}">${esc(g.name)}<small>${g.opts.length} opcija · ${g.type==='multi'?'više izbora':'jedan izbor'}</small></button>`).join(''):'<small style="color:var(--muted)">Nema grupa opcija. Dodajte ih u kartici „Opcije i dodaci”.</small>';
     q('#edGroups').querySelectorAll('.gp').forEach(b=>b.onclick=()=>{const g=b.dataset.g;d.groups=d.groups.includes(g)?d.groups.filter(x=>x!==g):C.groups.map(x=>x.id).filter(x=>d.groups.includes(x)||x===g);paintGroups();});};
-  paintArt();paintGroups();
+  d.cats2=(d.cats2||[]).filter(x=>x!==d.cat&&cat(x));
+  const paintCats2=()=>{q('#edCats2').innerHTML=C.cats.filter(c=>c.id!==d.cat).map(c=>`<button class="chip ${d.cats2.includes(c.id)?'on':''}" data-c="${esc(c.id)}">${esc(c.e)} ${esc(c.name)}</button>`).join('');
+    q('#edCats2').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{const id=b.dataset.c;d.cats2=d.cats2.includes(id)?d.cats2.filter(x=>x!==id):[...d.cats2,id];paintCats2();});};
+  paintArt();paintGroups();paintCats2();
   let uploading=false;
   q('#edFile').onchange=async e=>{const f=e.target.files[0];if(!f)return; e.target.value='';
     let dataUrl; try{dataUrl=await compress(f);}catch(err){toast('Datoteka nije slika. Odaberite JPG ili PNG.',true);return;}
@@ -493,7 +627,7 @@ function editItem(id,fresh){
   };
   q('#edRm').onclick=()=>{d.img='';paintArt();};
   q('#edE').oninput=e=>{d.e=e.target.value;paintArt();};
-  q('#edCat').onchange=e=>{d.cat=e.target.value; if(isNew||!d.groups.length)d.groups=[...cat(d.cat).groups];paintGroups();};
+  q('#edCat').onchange=e=>{d.cat=e.target.value; d.cats2=d.cats2.filter(x=>x!==d.cat); if(isNew||!d.groups.length)d.groups=[...cat(d.cat).groups];paintGroups();paintCats2();};
   q('#edSave').onclick=()=>{
     if(uploading)return;
     d.name=q('#edName').value.trim(); d.desc=q('#edDesc').value.trim(); d.badge=q('#edBadge').value.trim();
@@ -533,7 +667,7 @@ function admCats(){
     const ap=p.querySelector('[data-apply]');if(ap)ap.onclick=()=>confirmBox('Primijeniti opcije?',`Svi artikli u kategoriji „${c.name}” dobit će iste opcije.`,'Primijeni',()=>{C.items.filter(i=>i.cat===c.id).forEach(i=>i.groups=[...c.groups]);save();toast('Opcije primijenjene');});
     p.querySelector('[data-del]').onclick=()=>{const n=C.items.filter(x=>x.cat===c.id).length;
       if(n){toast(`Kategorija ima ${n} artikala. Premjestite ili obrišite ih prije brisanja.`,true);return;}
-      confirmBox(`Obrisati „${c.name}”?`,'Kategorija je prazna i bit će uklonjena s kioska.','Obriši',()=>{C.cats=C.cats.filter(x=>x!==c);save();admCats();});};
+      confirmBox(`Obrisati „${c.name}”?`,'Kategorija nema svojih artikala i bit će uklonjena s kioska.','Obriši',()=>{C.cats=C.cats.filter(x=>x!==c);C.items.forEach(i=>{if(i.cats2)i.cats2=i.cats2.filter(x=>x!==c.id);});save();admCats();});};
   });
   $('#addCat').onclick=()=>{C.cats.push({id:uid('c'),name:'Nova kategorija',e:'🍽️',sub:'',groups:[]});save();admCats();$('#admBody').scrollTop=1e6;};
 }
