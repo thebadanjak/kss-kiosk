@@ -20,7 +20,7 @@ const DEVICE=(()=>{let d=lsGet('kss-device-id',null);if(!d){d=MODE+'-'+Math.rand
 
 /* ---------- default menu ---------- */
 const DEF={
-  settings:{brand:'KSS',tagline:'STREET FOOD',pin:'1234',vat:13,idle:60,promo:''},
+  settings:{brand:'KSS',tagline:'STREET FOOD',pin:'1234',vat:13,idle:60,promo:'',saver:{style:'hero',main:'',side:'',drink:''}},
   groups:[
     {id:'meal',name:'Napravi meni',hint:'pomfrit + piće',type:'single',req:true,opts:[{n:'Samo burger',p:0},{n:'Meni (pomfrit + 0,33 l)',p:3.5},{n:'Veliki meni (veliki pomfrit + 0,5 l)',p:4.7}]},
     {id:'extra',name:'Dodaci',hint:'odaberite više',type:'multi',req:false,opts:[{n:'Dodatni cheddar',p:0.8},{n:'Hrskava slanina',p:1.2},{n:'Jalapeño',p:0.5},{n:'Karamelizirani luk',p:0.6},{n:'Pečeno jaje',p:0.9}]},
@@ -79,7 +79,7 @@ const cat=id=>C.cats.find(c=>c.id===id);
 const grp=id=>C.groups.find(g=>g.id===id);
 const itemById=id=>C.items.find(i=>i.id===id);
 const art=(it,cls='')=>`<div class="art ${cls}" style="background:${tint(it.id)}">${esc(it.e)}${it.img?`<img src="${esc(it.img)}" alt="" loading="lazy" onerror="this.remove()">`:''}</div>`;
-const itemGroups=it=>(it.groups||[]).map(grp).filter(Boolean);
+const itemGroups=it=>C.groups.filter(g=>(it.groups||[]).includes(g.id));
 const today=()=>new Date().toLocaleDateString('sv');
 function debounce(fn,ms){let t=null;return (...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
 function withTimeout(p,ms){return Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);}
@@ -231,6 +231,57 @@ function paintSync(){
   p.textContent=LIVE?'Uživo':'Spajam se…'; p.className='pill alt'+(LIVE?' live':'');
 }
 
+/* ---------- screen saver (početni ekran) ---------- */
+const NEON=`<svg class="neon" viewBox="0 0 600 520" role="img" aria-label="Burger, pommes i piće">
+<g fill="none" stroke-linecap="round" stroke-linejoin="round">
+ <g class="n-cup">
+  <path d="M96 196 L204 196 L190 404 Q150 414 110 404 Z" stroke="#DB1F26" stroke-width="7" fill="#121013"/>
+  <path d="M88 176 Q150 162 212 176 L208 196 L92 196 Z" stroke="#DB1F26" stroke-width="7" fill="#121013"/>
+  <path d="M152 170 L176 98 L214 90" stroke="#FFF200" stroke-width="7"/>
+  <path d="M104 262 Q150 284 198 262" stroke="#FFF200" stroke-width="5"/>
+  <path d="M106 290 Q150 312 196 290" stroke="#FFF200" stroke-width="5"/>
+  <circle cx="132" cy="236" r="4" fill="#F2ECE3" stroke="none"/><circle cx="168" cy="344" r="3.5" fill="#F2ECE3" stroke="none"/><circle cx="148" cy="372" r="3" fill="#F2ECE3" stroke="none"/>
+ </g>
+ <g class="n-fries" stroke="#FFF200" stroke-width="7">
+  <path d="M410 268 L414 186"/><path d="M430 268 L438 168"/><path d="M450 268 L452 150"/><path d="M470 268 L476 172"/><path d="M490 268 L494 190"/><path d="M440 268 L426 198"/><path d="M462 268 L466 182"/>
+  <path d="M396 262 L508 262 L492 412 L412 412 Z" stroke="#DB1F26" fill="#121013"/>
+  <path d="M424 318 Q452 342 480 318" stroke="#FFF200" stroke-width="6"/>
+ </g>
+ <g class="n-burger">
+  <path d="M168 448 L432 448 Q440 486 404 492 L196 492 Q160 486 168 448 Z" stroke="#FFF200" stroke-width="7" fill="#121013"/>
+  <rect x="160" y="400" width="280" height="44" rx="22" stroke="#DB1F26" stroke-width="7" fill="#121013"/>
+  <path d="M166 392 L196 392 L208 414 L224 392 L376 392 L388 418 L402 392 L434 392" stroke="#FFF200" stroke-width="7" fill="none"/>
+  <path d="M156 378 Q178 362 200 378 T244 378 T288 378 T332 378 T376 378 T420 378 T448 378" stroke="#F2ECE3" stroke-width="6" fill="none"/>
+  <path d="M164 364 Q164 250 300 246 Q436 250 436 364 Z" stroke="#FFF200" stroke-width="7" fill="#121013"/>
+  <g stroke="#F2ECE3" stroke-width="5"><path d="M236 298 l12 -4"/><path d="M290 280 l12 2"/><path d="M344 300 l12 4"/><path d="M262 330 l12 -2"/><path d="M322 326 l12 2"/><path d="M380 334 l10 4"/><path d="M212 336 l10 -4"/></g>
+ </g>
+</g></svg>`;
+function saverItems(){
+  const sv=C.settings.saver||{}, byId=id=>id&&itemById(id);
+  const find=(...names)=>{for(const n of names){const i=C.items.find(x=>norm(x.name)===norm(n));if(i)return i;}return null;};
+  return {main:byId(sv.main)||find('Country Burger','Classic Smash'),side:byId(sv.side)||find('Pommes frites','Pomfrit'),drink:byId(sv.drink)||find('Pepsi cola 0,5 l','Coca-Cola')};
+}
+function paintSaver(){
+  const box=$('#saverArt'); if(!box)return;
+  const sv=Object.assign({style:'hero'},C.settings.saver||{}), it=saverItems();
+  const neon=()=>{box.className='saver-art';box.innerHTML=NEON;};
+  if(sv.style==='hero'){
+    box.className='saver-art hero';
+    box.innerHTML=`<div class="halo"></div><div class="floor"></div>
+      <img class="h-burger" src="img/saver/burger.webp" alt="Burger">
+      <img class="h-pommes" src="img/saver/pommes.webp" alt="Pommes frites">
+      <img class="h-pepsi" src="img/saver/pepsi.webp" alt="Pepsi">`;
+    return;
+  }
+  if(sv.style!=='photo'||!it.main||!it.main.img){neon();return;}
+  const ph=(x,cls)=>x&&x.img?`<div class="ph ${cls}"><img src="${esc(x.img)}" alt="${esc(x.name)}"></div>`:'';
+  box.className='saver-art photos';
+  box.innerHTML=ph(it.main,'ph-main')+ph(it.side,'ph-side')+ph(it.drink,'ph-drink');
+  box.querySelectorAll('.ph img').forEach(img=>img.addEventListener('error',()=>{
+    const ph=img.closest('.ph'); if(ph.classList.contains('ph-main'))neon(); else ph.remove();
+  }));
+}
+
 /* =====================================================================
    CUSTOMER FLOW
    ===================================================================== */
@@ -239,6 +290,7 @@ let idleT=null,idleIv=null,doneT=null;
 
 function brand(){
   document.querySelectorAll('.brand-sm').forEach(el=>{if(!el.querySelector('img'))el.innerHTML='<img src="img/kss-mark.svg" alt="KSS">';});
+  paintSaver();
   const p=$('#promo'), t=String(C.settings.promo||'').trim(); p.hidden=!t;
   if(t){const m=t.match(/^(danas|novo|akcija)[:\s]+(.*)$/i);p.innerHTML=m?`<b>${esc(m[1])}</b><span>${esc(m[2])}</span>`:`<span>${esc(t)}</span>`;}
 }
@@ -675,13 +727,13 @@ function admCats(){
 /* ---- Option groups ---- */
 function admGroups(){
   const w=$('#admWrap');
-  w.innerHTML=`<div class="adm-head"><div><h2>OPCIJE I DODACI</h2><p class="adm-note">Grupe izbora koje kupac vidi kad dodirne artikl, npr. meni, umak ili veličina. Cijena se dodaje na cijenu artikla; 0 znači uključeno u cijenu. „Obavezno” znači da je prva opcija unaprijed odabrana.</p></div>
+  w.innerHTML=`<div class="adm-head"><div><h2>OPCIJE I DODACI</h2><p class="adm-note">Strelicama mijenjate redoslijed grupa i opcija; kupac ih vidi istim redom. Grupe izbora koje kupac vidi kad dodirne artikl, npr. meni, umak ili veličina. Cijena se dodaje na cijenu artikla; 0 znači uključeno u cijenu. „Obavezno” znači da je prva opcija unaprijed odabrana.</p></div>
     <button class="btn y sm" id="addGrp">+ Nova grupa</button></div>`+
   C.groups.map(g=>{const used=C.items.filter(i=>(i.groups||[]).includes(g.id)).length;return `<div class="panel" data-id="${esc(g.id)}">
     <div class="panel-top">
       <label class="f grow"><span>Naziv grupe</span><input class="inp" data-k="name" value="${esc(g.name)}"></label>
       <label class="f grow"><span>Pomoćni tekst</span><input class="inp" data-k="hint" value="${esc(g.hint)}" placeholder="npr. odaberite više"></label>
-      <button class="ic red" data-del aria-label="Obriši grupu" style="align-self:flex-end">✕</button>
+      <div class="mvgrp" style="align-self:flex-end"><button class="ic" data-gmv="-1" aria-label="Grupu gore" ${C.groups.indexOf(g)===0?'disabled':''}>↑</button><button class="ic" data-gmv="1" aria-label="Grupu dolje" ${C.groups.indexOf(g)===C.groups.length-1?'disabled':''}>↓</button><button class="ic red" data-del aria-label="Obriši grupu">✕</button></div>
     </div>
     <div class="panel-top">
       <label class="f"><span>Način izbora</span><select class="inp" data-k="type"><option value="single" ${g.type==='single'?'selected':''}>Jedan izbor</option><option value="multi" ${g.type==='multi'?'selected':''}>Više izbora</option></select></label>
@@ -692,6 +744,7 @@ function admGroups(){
       <div style="display:flex;flex-direction:column;gap:8px">${g.opts.map((o,k)=>`<div class="optrow" data-o="${k}">
         <input class="inp" data-ok="n" value="${esc(o.n)}" aria-label="Naziv opcije">
         <input class="inp" data-ok="p" type="number" step="0.1" min="0" inputmode="decimal" value="${esc(o.p)}" aria-label="Doplata">
+        <button class="ic" data-omv="-1" aria-label="Opciju gore" ${k===0?'disabled':''}>↑</button><button class="ic" data-omv="1" aria-label="Opciju dolje" ${k===g.opts.length-1?'disabled':''}>↓</button>
         <button class="ic red" data-odel aria-label="Ukloni opciju">✕</button></div>`).join('')}</div>
       <button class="btn ghost sm" data-oadd style="align-self:flex-start">+ Dodaj opciju</button></div>
   </div>`}).join('');
@@ -699,6 +752,8 @@ function admGroups(){
   w.querySelectorAll('.panel').forEach(p=>{const g=grp(p.dataset.id);
     p.querySelectorAll('[data-ok]').forEach(inp=>inp.addEventListener('input',()=>{const o=g.opts[+inp.closest('.optrow').dataset.o];
       o[inp.dataset.ok]=inp.dataset.ok==='p'?Math.max(0,parseFloat(String(inp.value).replace(',','.'))||0):inp.value;save();}));
+    p.querySelectorAll('[data-omv]').forEach(b=>b.onclick=()=>{const k=+b.closest('.optrow').dataset.o,j=k+ +b.dataset.omv;[g.opts[k],g.opts[j]]=[g.opts[j],g.opts[k]];save();keepScroll(admGroups);});
+    p.querySelectorAll('[data-gmv]').forEach(b=>b.onclick=()=>{const k=C.groups.indexOf(g),j=k+ +b.dataset.gmv;[C.groups[k],C.groups[j]]=[C.groups[j],C.groups[k]];save();admGroups();const el=document.querySelector(`.panel[data-id="${g.id}"]`);el&&el.scrollIntoView({block:'center'});});
     p.querySelectorAll('[data-odel]').forEach(b=>b.onclick=()=>{if(g.opts.length<=1){toast('Grupa mora imati barem jednu opciju.',true);return;}g.opts.splice(+b.closest('.optrow').dataset.o,1);save();admGroups();});
     p.querySelector('[data-oadd]').onclick=()=>{g.opts.push({n:'Nova opcija',p:0});save();admGroups();const r=document.querySelector(`.panel[data-id="${g.id}"] .optrow:last-child input`);r&&(r.focus(),r.select());};
     p.querySelector('[data-del]').onclick=()=>confirmBox(`Obrisati grupu „${g.name}”?`,'Grupa će se ukloniti sa svih artikala koji je koriste.','Obriši',()=>{
@@ -706,6 +761,8 @@ function admGroups(){
   });
   $('#addGrp').onclick=()=>{C.groups.push({id:uid('g'),name:'Nova grupa',hint:'',type:'single',req:false,opts:[{n:'Opcija 1',p:0}]});save();admGroups();$('#admBody').scrollTop=1e6;};
 }
+
+function keepScroll(fn){const b=$('#admBody'),y=b.scrollTop;fn();b.scrollTop=y;}
 
 /* ---- Settings ---- */
 function admSettings(){
@@ -722,6 +779,14 @@ function admSettings(){
   <div class="panel"><div class="f"><span>Ovaj uređaj</span>
     <p class="adm-note">Način rada: <b>${modeName}</b> · ${CLOUD?`povezan s oblakom (lokal ${esc(String(RID).slice(0,8))}…)`:'demo, podaci samo na ovom uređaju'} · oznaka uređaja ${esc(DEVICE)}</p>
     ${CLOUD?'<button class="btn ghost sm" id="logoutBtn" style="align-self:flex-start">Odjavi uređaj</button>':''}</div></div>
+  <div class="panel"><div class="f"><span>Početni ekran (čuvar zaslona)</span>
+    <p class="adm-note" style="margin:0">Prikazuje se kad kiosk miruje. Zadano su ugrađene fotografije burgera, pommesa i Pepsija. Artikli ispod vrijede samo za prikaz „Fotografije odabranih artikala”.</p></div>
+    <div class="two">
+      <label class="f"><span>Prikaz</span><select class="inp" id="svStyle"><option value="hero">Burger, pommes i Pepsi (ugrađene fotografije)</option><option value="photo">Fotografije odabranih artikala (krugovi)</option><option value="neon">Neonska ilustracija (u stilu logotipa)</option></select></label>
+      <label class="f"><span>Glavni artikl (velika fotografija)</span><select class="inp" id="svMain"></select></label>
+      <label class="f"><span>Prilog (fotografija)</span><select class="inp" id="svSide"></select></label>
+      <label class="f"><span>Piće (fotografija)</span><select class="inp" id="svDrink"></select></label>
+    </div></div>
   <div class="panel"><div class="f"><span>KSS jela iz Wolta</span>
     <p class="adm-note" id="impNote">Dodaje sva jela i kategorije iz vaše Wolt tablice (149 jela, 15 kategorija) s fotografijama. Jela se dodaju kao „Nije na jelovniku”: kupci ih ne vide dok ih ne uključite u kartici Artikli. Postojeći artikli ostaju. Ponovni uvoz ne stvara duplikate.</p>
     <div class="panel-top"><button class="btn y sm" id="impBtn">Uvezi KSS jela</button>${CLOUD?'<button class="btn ghost sm" id="migBtn">Prebaci Wolt fotografije u naš oblak</button>':''}</div>
@@ -736,6 +801,9 @@ function admSettings(){
   $('#pinInp').oninput=e=>{const v=e.target.value.replace(/\D/g,'');e.target.value=v;
     if(v.length>=4){s.pin=v;save();$('#pinMsg').textContent='PIN spremljen.';}else $('#pinMsg').textContent='PIN mora imati najmanje 4 znamenke. Vrijedi stari PIN dok ne upišete novi.';};
   const lo=$('#logoutBtn'); if(lo)lo.onclick=()=>confirmBox('Odjaviti uređaj?','Uređaj će tražiti ponovnu prijavu računom lokala.','Odjavi',()=>Cloud.logout());
+  const sv=C.settings.saver=Object.assign({style:'hero',main:'',side:'',drink:''},C.settings.saver||{}), cur=saverItems();
+  [['svMain','main'],['svSide','side'],['svDrink','drink']].forEach(([id,k])=>{const el=$('#'+id);el.innerHTML=`<option value="">— automatski (${esc((cur[k]||{name:'nema'}).name)}) —</option>`+C.items.map(i=>`<option value="${esc(i.id)}">${esc(i.name)} · ${eur(i.price)}</option>`).join('');el.value=sv[k]||'';el.onchange=()=>{sv[k]=el.value;save();brand();};});
+  $('#svStyle').value=sv.style||'hero'; $('#svStyle').onchange=e=>{sv.style=e.target.value;save();brand();};
   $('#impBtn').onclick=()=>importKss();
   const mg=$('#migBtn'); if(mg)mg.onclick=()=>migratePhotos(mg);
   $('#bkShow').onclick=()=>{$('#bk').value=JSON.stringify(C);$('#bk').select();};
